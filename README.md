@@ -33,4 +33,41 @@ The piano lives next to the server, so the generator runs on kevadk in productio
 
 ## Setup
 
-_TBD — Python deps (`mido`, `python-rtmidi`), MIDI backend env var, DB init script._
+```fish
+cd ~/2_projects/player_piano
+uv venv
+uv pip install -r requirements.txt
+.venv/bin/python db.py    # initialize SQLite at data/phrases.db
+```
+
+## Usage
+
+**Run the generator** (mock backend by default — logs notes to stdout):
+```fish
+.venv/bin/python generator.py
+```
+
+**Real MIDI backend** (requires a connected MIDI device):
+```fish
+.venv/bin/python -c 'import mido; print(mido.get_output_names())'
+set -x MIDI_BACKEND real
+set -x MIDI_PORT_NAME '<port name from list above>'
+.venv/bin/python generator.py
+```
+
+**Feedback HTTP server** (in a second terminal):
+```fish
+.venv/bin/python feedback.py
+```
+
+Send feedback on the most recent phrase:
+```fish
+curl -s    http://localhost:5050/current
+curl -sX POST http://localhost:5050/rate -H 'Content-Type: application/json' -d '{"rating": 5}'
+curl -sX POST http://localhost:5050/tag  -H 'Content-Type: application/json' -d '{"tag": "meditative"}'
+curl -sX POST http://localhost:5050/tag  -H 'Content-Type: application/json' -d '{"tag": "meditative", "remove": true}'
+```
+
+## Mood
+
+`current_mood.json` controls how the generator behaves (scale, root, octave range, velocity, density). The generator re-reads it at the start of each phrase, so edits take effect within ~10 seconds.

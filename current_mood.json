@@ -1,0 +1,8 @@
+{
+  "scale": "pentatonic_major",
+  "root": "C",
+  "octave_range": [3, 5],
+  "velocity_range": [40, 90],
+  "note_duration_range": [0.3, 1.2],
+  "gap_range": [0.05, 0.4]
+}

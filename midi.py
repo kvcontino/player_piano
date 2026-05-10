@@ -2,6 +2,8 @@ from __future__ import annotations
 import os
 from abc import ABC, abstractmethod
 
+from music import pitch_name
+
 
 class MidiOut(ABC):
     @abstractmethod
@@ -14,18 +16,12 @@ class MidiOut(ABC):
     def close(self) -> None: ...
 
 
-def _pitch_name(pitch: int) -> str:
-    names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-    octave = (pitch // 12) - 1  # MIDI 60 = C4 (middle C)
-    return f"{names[pitch % 12]}{octave}"
-
-
 class MockMidiOut(MidiOut):
     def note_on(self, pitch: int, velocity: int) -> None:
-        print(f"ON   {_pitch_name(pitch):>4}  vel={velocity}", flush=True)
+        print(f"ON   {pitch_name(pitch):>4}  vel={velocity}", flush=True)
 
     def note_off(self, pitch: int) -> None:
-        print(f"OFF  {_pitch_name(pitch):>4}", flush=True)
+        print(f"OFF  {pitch_name(pitch):>4}", flush=True)
 
     def close(self) -> None:
         pass
