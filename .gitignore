@@ -1,0 +1,20 @@
+# SQLite database files — personal phrase data stays local
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+*.swp
+*~
