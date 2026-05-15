@@ -23,6 +23,27 @@ PROFILES = [
             "chord_types": ["octave", "fifth", "triad"],
         },
     },
+    {
+        "name": "Gentle",
+        "description": (
+            "Slow, soft, consonant ambient. Pentatonic major, warm pad and string voices, "
+            "mostly stepwise motion, light chords, heavy sustain. Low velocity throughout. "
+            "Designed for background listening — or cats."
+        ),
+        "traits": {
+            "scales": ["pentatonic_major", "pentatonic_minor"],
+            "voices": [48, 88, 89],  # String Ensemble 1, Pad 1 (New Age), Pad 2 (Warm)
+            "octave_range": [3, 5],
+            "velocity_range": [20, 55],
+            "note_duration_range": [0.5, 3.0],
+            "gap_range": [0.3, 1.2],
+            "n_notes_range": [6, 10],
+            "interval_leap_prob": 0.1,
+            "sustain_prob": 0.85,
+            "chord_prob": 0.2,
+            "chord_types": ["fifth", "octave"],
+        },
+    },
 ]
 
 if __name__ == "__main__":
