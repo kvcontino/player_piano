@@ -1,0 +1,17 @@
+{
+  "bpm": 80,
+  "grid_beats": 8,
+  "drift": {
+    "duration_minutes": 60,
+    "bpm":                 {"from": 80,        "to": 100},
+    "velocity_range":      {"from": [25, 90],  "to": [45, 115]},
+    "interval_leap_prob":  {"from": 0.55,      "to": 0.8},
+    "chord_prob":          {"from": 0.45,      "to": 0.7},
+    "gap_range":           {"from": [0.0, 0.2],"to": [0.0, 0.06]},
+    "legato":              {"from": 0.78,      "to": 0.88}
+  },
+  "layers": [
+    {"channel": 0, "profile": "Keith Emerson"},
+    {"channel": 1, "profile": "Bass"}
+  ]
+}

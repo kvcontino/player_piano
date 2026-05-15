@@ -18,6 +18,11 @@ GM_VOICES = {
     81: "Lead 2 (Sawtooth)",   # Moog-like
     88: "Pad 1 (New Age)",
     89: "Pad 2 (Warm)",
+    90: "Pad 3 (Polysynth)",
+    91: "Pad 4 (Choir)",
+    92: "Pad 5 (Bowed Glass)",
+    94: "Pad 7 (Halo)",
+    95: "Pad 8 (Sweep)",
 }
 
 

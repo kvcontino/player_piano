@@ -1,0 +1,16 @@
+{
+  "bpm": 52,
+  "grid_beats": 16,
+  "drift": {
+    "duration_minutes": 45,
+    "bpm":            {"from": 52, "to": 44},
+    "velocity_range": {"from": [30, 55], "to": [20, 42]},
+    "legato":         {"from": 0.92, "to": 0.97},
+    "gap_range":      {"from": [0.3, 1.2], "to": [0.6, 2.0]},
+    "chord_prob":     {"from": 0.2, "to": 0.08}
+  },
+  "layers": [
+    {"channel": 0, "profile": "Gentle"},
+    {"channel": 1, "profile": "Bass", "mood_overrides": {"velocity_range": [30, 55]}}
+  ]
+}

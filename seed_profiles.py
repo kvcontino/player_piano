@@ -84,6 +84,33 @@ PROFILES = [
             "legato": 0.92,
         },
     },
+    {
+        "name": "Relax",
+        "description": (
+            "Near-silence made audible. Glacially slow, extremely soft, sparse single notes "
+            "on evolving pad voices (Bowed Glass, Halo, Sweep). Whole-tone and pentatonic "
+            "scales, almost no leaps, very long sustained notes with wide gaps. "
+            "Dissolves into the room."
+        ),
+        "traits": {
+            "scales": ["pentatonic_major", "whole_tone"],
+            "voices": [92, 94, 95],  # Pad 5 (Bowed Glass), Pad 7 (Halo), Pad 8 (Sweep)
+            "octave_range": [3, 5],
+            "velocity_range": [8, 28],
+            "note_duration_range": [1.5, 6.0],
+            "gap_range": [1.0, 4.0],
+            "n_notes_range": [3, 6],
+            "interval_leap_prob": 0.05,
+            "sustain_prob": 0.98,
+            "chord_prob": 0.1,
+            "chord_types": ["fifth"],
+            "tempo_bpm": 38,
+            "time_sig": [3, 4],
+            "n_bars": 4,
+            "note_values": [2.0, 3.0, 4.0],
+            "legato": 0.97,
+        },
+    },
 ]
 
 if __name__ == "__main__":

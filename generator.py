@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 
 from db import insert_phrase, start_session, end_session, get_profile
+from drift import Drift
 from midi import make_midi_out
 from music import chord_pitches, scale_pitches, text_repr
 
@@ -178,10 +179,13 @@ def play_phrase(
     profile_id: int | None,
     channel: int = 0,
     global_bpm: int | None = None,
+    drift: Drift | None = None,
 ) -> int:
     params = merge_traits(mood, traits)
     if global_bpm is not None:
         params["tempo_bpm"] = global_bpm
+    if drift is not None:
+        params = drift.apply_to_params(params)
 
     voice = params.get("voice")
     if voice is not None:
@@ -302,6 +306,7 @@ def layer_loop(
     profile_name: str | None,
     mood_overrides: dict,
     stop_event: threading.Event,
+    drift: Drift | None = None,
 ) -> None:
     """Continuous phrase loop for one layer. Waits for the grid after each phrase."""
     profile_id = None
@@ -314,13 +319,16 @@ def layer_loop(
             print(f"[warning: profile '{profile_name}' not found — run seed_profiles.py]", flush=True)
 
     while not stop_event.is_set():
+        if drift is not None:
+            clock.bpm = drift.current_bpm()
         mood = {**load_mood(), **mood_overrides}
         try:
             phrase_id = play_phrase(
                 midi_out, mood, traits, session_id, profile_id,
-                channel=channel, global_bpm=clock.bpm,
+                channel=channel, global_bpm=clock.bpm, drift=drift,
             )
-            print(f"[ch{channel} phrase {phrase_id}]", flush=True)
+            drift_info = f" drift={drift.factor():.2f}" if drift is not None else ""
+            print(f"[ch{channel} phrase {phrase_id}{drift_info}]", flush=True)
         except Exception as exc:
             print(f"[ch{channel} error: {exc}]", flush=True)
         clock.wait_for_next_grid()
@@ -346,12 +354,25 @@ def _run_layered(midi_out, session_id: int, config: dict) -> None:
     clock = BeatClock(global_bpm, grid_beats)
     stop_event = threading.Event()
 
+    drift: Drift | None = None
+    if "drift" in config:
+        drift = Drift(config["drift"], start_time=time.monotonic(), base_bpm=float(global_bpm))
+        drift_duration = config["drift"].get("duration_minutes", 60)
+        print(f"[drift enabled | {drift_duration} min arc]", flush=True)
+
     threads = [
         threading.Thread(
             target=layer_loop,
-            args=(midi_out, clock, session_id,
-                  spec["channel"], spec.get("profile"), spec.get("mood_overrides", {}),
-                  stop_event),
+            kwargs=dict(
+                midi_out=midi_out,
+                clock=clock,
+                session_id=session_id,
+                channel=spec["channel"],
+                profile_name=spec.get("profile"),
+                mood_overrides=spec.get("mood_overrides", {}),
+                stop_event=stop_event,
+                drift=drift,
+            ),
             daemon=True,
             name=f"layer-ch{spec['channel']}",
         )

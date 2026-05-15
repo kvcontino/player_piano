@@ -1,0 +1,15 @@
+{
+  "bpm": 38,
+  "grid_beats": 16,
+  "drift": {
+    "duration_minutes": 60,
+    "bpm":            {"from": 38,       "to": 32},
+    "velocity_range": {"from": [8, 28],  "to": [5, 18]},
+    "gap_range":      {"from": [1.0, 4.0],"to": [2.0, 6.0]},
+    "legato":         {"from": 0.97,     "to": 0.99},
+    "chord_prob":     {"from": 0.1,      "to": 0.02}
+  },
+  "layers": [
+    {"channel": 0, "profile": "Relax"}
+  ]
+}
