@@ -40,11 +40,44 @@ def merge_traits(mood: dict, traits: dict) -> dict:
             params["scale"] = random.choice(val)  # pick one scale per phrase
         elif key == "voices":
             params["voice"] = random.choice(val)  # pick one voice per phrase
+        elif key == "time_sigs":
+            params["time_sig"] = random.choice(val)  # pick one time sig per phrase
         elif key == "root" and val is not None:
             params["root"] = val
         else:
             params[key] = val
     return params
+
+
+def build_slot_schedule(params: dict) -> list[tuple[float, float]]:
+    """
+    Returns [(note_dur, gap_dur), ...] for one metered phrase.
+    Empty list means free-time mode (no tempo_bpm in params).
+
+    Slots are sized so note_dur + gap_dur = slot_beats * beat_dur.
+    legato controls what fraction of the slot the note sounds.
+    """
+    if "tempo_bpm" not in params:
+        return []
+    # denominator tells us the beat unit: 4 = quarter, 8 = eighth, etc.
+    beat_dur = (60.0 / params["tempo_bpm"]) * (4.0 / params["time_sig"][1])
+    beats_per_bar = params["time_sig"][0]
+    n_bars = params.get("n_bars", 2)
+    budget = float(n_bars * beats_per_bar)
+    note_values = params.get("note_values", [0.25, 0.5, 0.5, 1.0])
+    legato = params.get("legato", 0.85)
+
+    slots: list[tuple[float, float]] = []
+    remaining = budget
+    while remaining > 1e-9:
+        choices = [v for v in note_values if v <= remaining + 1e-9]
+        if not choices:
+            break
+        slot_beats = random.choice(choices)
+        slot_secs = slot_beats * beat_dur
+        slots.append((slot_secs * legato, slot_secs * (1.0 - legato)))
+        remaining = round(remaining - slot_beats, 9)
+    return slots
 
 
 def apply_bend_style(midi_out, duration: float, style: str, semitones: float) -> None:
@@ -109,7 +142,16 @@ def play_phrase(
     bend_styles = params.get("bend_styles", ["slide_in"])
     bend_semitones = params.get("bend_semitones", 1.0)
 
-    n_notes = random.randint(*n_notes_range)
+    # Build timing schedule — metered if tempo_bpm present, otherwise free-time
+    timing = build_slot_schedule(params)
+    if not timing:
+        n = random.randint(*n_notes_range)
+        timing = [
+            (random.uniform(*params["note_duration_range"]),
+             random.uniform(*params["gap_range"]))
+            for _ in range(n)
+        ]
+
     note_events: list[dict] = []
     pitches: list[int] = []
     phrase_start = time.monotonic()
@@ -119,10 +161,9 @@ def play_phrase(
     if use_sustain:
         midi_out.set_sustain(True)
     try:
-        for _ in range(n_notes):
+        for note_dur, gap_dur in timing:
             pitch = pick_note(pitches_pool, prev_pitch, leap_prob)
             velocity = random.randint(*params["velocity_range"])
-            duration = random.uniform(*params["note_duration_range"])
             t_offset_ms = int((time.monotonic() - phrase_start) * 1000)
 
             if chord_prob > 0 and random.random() < chord_prob:
@@ -136,7 +177,6 @@ def play_phrase(
                 else None
             )
 
-            # slide_in: set bend below centre before note fires so it sounds flat → rises
             if bend_style == "slide_in":
                 midi_out.set_pitch_bend(-int(bend_semitones * 4096))
 
@@ -145,9 +185,9 @@ def play_phrase(
                 midi_out.note_on(p, velocity if p == pitch else companion_vel)
             try:
                 if bend_style:
-                    apply_bend_style(midi_out, duration, bend_style, bend_semitones)
+                    apply_bend_style(midi_out, note_dur, bend_style, bend_semitones)
                 else:
-                    time.sleep(duration)
+                    time.sleep(note_dur)
             finally:
                 if bend_style:
                     midi_out.set_pitch_bend(0)
@@ -158,7 +198,7 @@ def play_phrase(
                 "pitch": pitch,
                 "velocity": velocity,
                 "time_ms": t_offset_ms,
-                "duration_ms": int(duration * 1000),
+                "duration_ms": int(note_dur * 1000),
             }
             if len(to_play) > 1:
                 event["chord"] = to_play[1:]
@@ -167,13 +207,13 @@ def play_phrase(
             note_events.append(event)
             pitches.append(pitch)
             prev_pitch = pitch
-            time.sleep(random.uniform(*params["gap_range"]))
+            time.sleep(gap_dur)
     finally:
         if use_sustain:
             midi_out.set_sustain(False)
 
     phrase_params = {
-        "n_notes": n_notes,
+        "n_notes": len(note_events),
         "scale": params["scale"],
         "root": params["root"],
         "voice": voice,
@@ -182,6 +222,11 @@ def play_phrase(
         "chord_prob": chord_prob,
         "bend_prob": bend_prob,
     }
+    if "tempo_bpm" in params:
+        phrase_params["tempo_bpm"] = params["tempo_bpm"]
+        phrase_params["time_sig"] = params["time_sig"]
+        phrase_params["n_bars"] = params.get("n_bars", 2)
+
     return insert_phrase(
         session_id=session_id,
         notes=note_events,

@@ -24,6 +24,11 @@ PROFILES = [
             "bend_prob": 0.3,
             "bend_styles": ["slide_in", "fall_off"],
             "bend_semitones": 1.5,
+            "tempo_bpm": 88,
+            "time_sigs": [[4, 4], [5, 8], [7, 8], [5, 4], [7, 4], [6, 8], [11, 8], [3, 4]],
+            "n_bars": 2,
+            "note_values": [0.5, 0.5, 0.5, 1.0, 1.0, 2.0],
+            "legato": 0.78,
         },
     },
     {
@@ -45,6 +50,11 @@ PROFILES = [
             "sustain_prob": 0.85,
             "chord_prob": 0.2,
             "chord_types": ["fifth", "octave"],
+            "tempo_bpm": 52,
+            "time_sig": [3, 4],
+            "n_bars": 4,
+            "note_values": [1.0, 1.0, 2.0, 3.0],
+            "legato": 0.92,
         },
     },
 ]
