@@ -7,11 +7,16 @@ ROOTS = {
 }
 
 SCALES = {
-    "pentatonic_major": [0, 2, 4, 7, 9],
-    "pentatonic_minor": [0, 3, 5, 7, 10],
-    "major":            [0, 2, 4, 5, 7, 9, 11],
-    "minor":            [0, 2, 3, 5, 7, 8, 10],
-    "dorian":           [0, 2, 3, 5, 7, 9, 10],
+    "pentatonic_major":  [0, 2, 4, 7, 9],
+    "pentatonic_minor":  [0, 3, 5, 7, 10],
+    "major":             [0, 2, 4, 5, 7, 9, 11],
+    "minor":             [0, 2, 3, 5, 7, 8, 10],
+    "dorian":            [0, 2, 3, 5, 7, 9, 10],
+    "harmonic_minor":    [0, 2, 3, 5, 7, 8, 11],   # natural minor + raised 7th
+    "phrygian":          [0, 1, 3, 5, 7, 8, 10],   # b2 gives dark, Spanish character
+    "phrygian_dominant": [0, 1, 4, 5, 7, 8, 10],   # phrygian + major 3rd; exotic
+    "diminished":        [0, 2, 3, 5, 6, 8, 9, 11], # whole-half octatonic
+    "whole_tone":        [0, 2, 4, 6, 8, 10],       # symmetric; dreamlike, unstable
 }
 
 

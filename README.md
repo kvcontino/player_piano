@@ -11,7 +11,7 @@ Decoupled modules communicating via filesystem + SQLite:
 - **Feedback HTTP server** — like/tag the current phrase
 - **Memory** — SQLite DB of phrases, feedback, musician profiles
 
-The generator runs even if the agent fails. Phrases (8-12 notes each) are atomic units, logged with full parameters and rateable later.
+The generator runs even if the agent fails. Phrases are atomic units (8-16 notes), logged with full parameters, profile linkage, and rateable later.
 
 ## Stages
 
@@ -37,8 +37,11 @@ The piano lives next to the server, so the generator runs on kevadk in productio
 cd ~/2_projects/player_piano
 uv venv
 uv pip install -r requirements.txt
-.venv/bin/python db.py    # initialize SQLite at data/phrases.db
+.venv/bin/python db.py             # initialize SQLite at data/phrases.db
+.venv/bin/python seed_profiles.py  # insert musician profiles (Keith Emerson, etc.)
 ```
+
+Fedora prerequisite: `sudo dnf install -y alsa-lib-devel` (needed for `python-rtmidi` to compile).
 
 ## Usage
 
@@ -70,4 +73,23 @@ curl -sX POST http://localhost:5050/tag  -H 'Content-Type: application/json' -d 
 
 ## Mood
 
-`current_mood.json` controls how the generator behaves (scale, root, octave range, velocity, density). The generator re-reads it at the start of each phrase, so edits take effect within ~10 seconds.
+`current_mood.json` controls base generation parameters (scale, root, octave range, velocity, density). The generator re-reads it at the start of each phrase, so edits take effect within ~10 seconds.
+
+## Profiles
+
+`current_profile.json` activates a musician profile. Profiles overlay traits on top of the mood — they override scale selection, dynamics, octave range, note density, and interval behavior.
+
+```json
+{"name": "Keith Emerson"}
+```
+
+To deactivate a profile (raw mood only):
+```json
+{"name": null}
+```
+
+The profile is also re-read each phrase, so switching takes effect immediately.
+
+**Keith Emerson** traits: harmonic minor / phrygian dominant / diminished scales; octave range 2-6; velocity 25-115; fast staccato runs to 2s held notes; 55% chance of interval leaps (>3 semitones), producing the dramatic jumps characteristic of ELP-era playing.
+
+To add more profiles, add entries to `seed_profiles.py` and re-run it.

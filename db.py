@@ -114,6 +114,33 @@ def tag_latest_phrase(tag: str, remove: bool = False, db_path: Path = DEFAULT_DB
         return phrase_id
 
 
+def insert_profile(
+    name: str,
+    description: str,
+    traits: dict,
+    db_path: Path = DEFAULT_DB_PATH,
+) -> int:
+    with connect(db_path) as conn:
+        cur = conn.execute(
+            "INSERT INTO musician_profiles (name, description, traits_json) VALUES (?, ?, ?)",
+            (name, description, json.dumps(traits)),
+        )
+        return cur.lastrowid
+
+
+def get_profile(name: str, db_path: Path = DEFAULT_DB_PATH) -> dict | None:
+    with connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT id, name, description, traits_json FROM musician_profiles WHERE name = ?",
+            (name,),
+        ).fetchone()
+        if row is None:
+            return None
+        d = dict(row)
+        d["traits"] = json.loads(d.pop("traits_json"))
+        return d
+
+
 if __name__ == "__main__":
     init_db()
     print(f"Initialized: {DEFAULT_DB_PATH}")
