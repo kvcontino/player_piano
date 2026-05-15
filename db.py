@@ -164,6 +164,117 @@ def get_profile(name: str, db_path: Path = DEFAULT_DB_PATH) -> dict | None:
         return d
 
 
+def get_phrase_by_id(phrase_id: int, db_path: Path = DEFAULT_DB_PATH) -> dict | None:
+    with connect(db_path) as conn:
+        row = conn.execute(
+            """
+            SELECT p.id, p.session_id, p.profile_id, p.created_at,
+                   p.notes_json, p.params_json, p.mood_snapshot,
+                   p.rating, p.rated_at, p.text_repr,
+                   mp.name AS profile_name
+            FROM phrases p
+            LEFT JOIN musician_profiles mp ON p.profile_id = mp.id
+            WHERE p.id = ?
+            """,
+            (phrase_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        d = dict(row)
+        d["notes"] = json.loads(d.pop("notes_json"))
+        d["params"] = json.loads(d.pop("params_json"))
+        d["mood"] = json.loads(d.pop("mood_snapshot"))
+        tags = conn.execute(
+            "SELECT tag FROM phrase_tags WHERE phrase_id = ? ORDER BY tag",
+            (d["id"],),
+        ).fetchall()
+        d["tags"] = [t["tag"] for t in tags]
+        return d
+
+
+def search_phrases(
+    query: str = "",
+    min_rating: int | None = None,
+    tag: str | None = None,
+    scale: str | None = None,
+    profile: str | None = None,
+    limit: int = 5,
+    db_path: Path = DEFAULT_DB_PATH,
+) -> list[dict]:
+    with connect(db_path) as conn:
+        conditions: list[str] = []
+        args: list = []
+
+        if query:
+            conditions.append(
+                "p.id IN (SELECT rowid FROM phrases_fts WHERE phrases_fts MATCH ?)"
+            )
+            args.append(query)
+        if min_rating is not None:
+            conditions.append("p.rating >= ?")
+            args.append(min_rating)
+        if scale is not None:
+            conditions.append("json_extract(p.params_json, '$.scale') = ?")
+            args.append(scale)
+        if profile is not None:
+            conditions.append("mp.name = ?")
+            args.append(profile)
+        if tag is not None:
+            conditions.append(
+                "EXISTS (SELECT 1 FROM phrase_tags pt WHERE pt.phrase_id = p.id AND pt.tag = ?)"
+            )
+            args.append(tag)
+
+        where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+        sql = f"""
+            SELECT p.id, p.created_at, p.params_json, p.rating, p.text_repr,
+                   mp.name AS profile_name
+            FROM phrases p
+            LEFT JOIN musician_profiles mp ON p.profile_id = mp.id
+            {where}
+            ORDER BY p.id DESC
+            LIMIT ?
+        """
+        args.append(limit)
+
+        rows = conn.execute(sql, args).fetchall()
+        results = []
+        for row in rows:
+            d = dict(row)
+            d["params"] = json.loads(d.pop("params_json"))
+            tag_rows = conn.execute(
+                "SELECT tag FROM phrase_tags WHERE phrase_id = ? ORDER BY tag",
+                (d["id"],),
+            ).fetchall()
+            d["tags"] = [t["tag"] for t in tag_rows]
+            results.append(d)
+        return results
+
+
+def rate_phrase(phrase_id: int, rating: int, db_path: Path = DEFAULT_DB_PATH) -> None:
+    if not (1 <= rating <= 5):
+        raise ValueError("rating must be 1-5")
+    with connect(db_path) as conn:
+        conn.execute(
+            "UPDATE phrases SET rating = ?, rated_at = datetime('now') WHERE id = ?",
+            (rating, phrase_id),
+        )
+
+
+def tag_phrase(phrase_id: int, tag: str, remove: bool = False, db_path: Path = DEFAULT_DB_PATH) -> None:
+    with connect(db_path) as conn:
+        if remove:
+            conn.execute(
+                "DELETE FROM phrase_tags WHERE phrase_id = ? AND tag = ?",
+                (phrase_id, tag),
+            )
+        else:
+            conn.execute(
+                "INSERT OR IGNORE INTO phrase_tags (phrase_id, tag) VALUES (?, ?)",
+                (phrase_id, tag),
+            )
+
+
 if __name__ == "__main__":
     init_db()
     print(f"Initialized: {DEFAULT_DB_PATH}")

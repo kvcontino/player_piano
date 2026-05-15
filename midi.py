@@ -7,10 +7,10 @@ from music import pitch_name, voice_name
 
 class MidiOut(ABC):
     @abstractmethod
-    def note_on(self, pitch: int, velocity: int) -> None: ...
+    def note_on(self, pitch: int, velocity: int, channel: int = 0) -> None: ...
 
     @abstractmethod
-    def note_off(self, pitch: int) -> None: ...
+    def note_off(self, pitch: int, channel: int = 0) -> None: ...
 
     @abstractmethod
     def set_voice(self, program: int, channel: int = 0) -> None: ...
@@ -26,20 +26,24 @@ class MidiOut(ABC):
 
 
 class MockMidiOut(MidiOut):
-    def note_on(self, pitch: int, velocity: int) -> None:
-        print(f"ON   {pitch_name(pitch):>4}  vel={velocity}", flush=True)
+    def note_on(self, pitch: int, velocity: int, channel: int = 0) -> None:
+        ch = f" ch{channel}" if channel else ""
+        print(f"ON   {pitch_name(pitch):>4}  vel={velocity}{ch}", flush=True)
 
-    def note_off(self, pitch: int) -> None:
-        print(f"OFF  {pitch_name(pitch):>4}", flush=True)
+    def note_off(self, pitch: int, channel: int = 0) -> None:
+        ch = f" ch{channel}" if channel else ""
+        print(f"OFF  {pitch_name(pitch):>4}{ch}", flush=True)
 
     def set_voice(self, program: int, channel: int = 0) -> None:
-        print(f"VOICE {program:3d}  {voice_name(program)}", flush=True)
+        ch = f" ch{channel}" if channel else ""
+        print(f"VOICE {program:3d}  {voice_name(program)}{ch}", flush=True)
 
     def set_pitch_bend(self, value: int, channel: int = 0) -> None:
         pass  # silent in mock — too noisy for 10-step ramps
 
     def set_sustain(self, on: bool, channel: int = 0) -> None:
-        print(f"SUSTAIN {'ON ' if on else 'OFF'}", flush=True)
+        ch = f" ch{channel}" if channel else ""
+        print(f"SUSTAIN {'ON ' if on else 'OFF'}{ch}", flush=True)
 
     def close(self) -> None:
         pass
@@ -51,11 +55,11 @@ class RealMidiOut(MidiOut):
         self._port = mido.open_output(port_name)
         self._mido = mido
 
-    def note_on(self, pitch: int, velocity: int) -> None:
-        self._port.send(self._mido.Message("note_on", note=pitch, velocity=velocity))
+    def note_on(self, pitch: int, velocity: int, channel: int = 0) -> None:
+        self._port.send(self._mido.Message("note_on", note=pitch, velocity=velocity, channel=channel))
 
-    def note_off(self, pitch: int) -> None:
-        self._port.send(self._mido.Message("note_off", note=pitch))
+    def note_off(self, pitch: int, channel: int = 0) -> None:
+        self._port.send(self._mido.Message("note_off", note=pitch, channel=channel))
 
     def set_voice(self, program: int, channel: int = 0) -> None:
         self._port.send(self._mido.Message("program_change", channel=channel, program=program))

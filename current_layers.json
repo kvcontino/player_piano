@@ -1,0 +1,8 @@
+{
+  "bpm": 80,
+  "grid_beats": 8,
+  "layers": [
+    {"channel": 0, "profile": "Keith Emerson"},
+    {"channel": 1, "profile": "Bass"}
+  ]
+}

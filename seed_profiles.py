@@ -32,6 +32,33 @@ PROFILES = [
         },
     },
     {
+        "name": "Bass",
+        "description": (
+            "Simple supportive bass line. Root motion, fifths, and occasional octaves. "
+            "Low register, long notes, sparse activity. Grounds whatever is above it. "
+            "Works under any harmonic context — pentatonic keeps it neutral."
+        ),
+        "traits": {
+            "scales": ["pentatonic_minor", "pentatonic_major"],
+            "voices": [32, 33, 35],  # Acoustic Bass, Electric Bass Finger, Fretless Bass
+            "octave_range": [1, 2],
+            "velocity_range": [45, 75],
+            "note_duration_range": [0.4, 2.0],
+            "gap_range": [0.1, 0.6],
+            "n_notes_range": [3, 6],
+            "interval_leap_prob": 0.2,
+            "sustain_prob": 0.3,
+            "chord_prob": 0.15,
+            "chord_types": ["octave", "fifth"],
+            "bend_prob": 0.0,
+            "tempo_bpm": 80,  # overridden by global clock in layered mode
+            "time_sig": [4, 4],
+            "n_bars": 2,
+            "note_values": [1.0, 1.0, 2.0, 4.0],
+            "legato": 0.65,
+        },
+    },
+    {
         "name": "Gentle",
         "description": (
             "Slow, soft, consonant ambient. Pentatonic major, warm pad and string voices, "
