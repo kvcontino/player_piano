@@ -76,6 +76,27 @@ def interval_sequence(pitches: list[int]) -> str:
     return " ".join(f"{curr - prev:+d}" for prev, curr in zip(pitches, pitches[1:]))
 
 
+def chord_pitches(primary: int, chord_type: str, pool: list[int]) -> list[int]:
+    """Return pitches to sound simultaneously with primary. Falls back to [primary] if companions aren't in pool."""
+    if chord_type == "octave":
+        for offset in (12, -12, 24, -24):
+            if primary + offset in pool:
+                return [primary, primary + offset]
+    elif chord_type == "fifth":
+        if primary + 7 in pool:
+            return [primary, primary + 7]
+    elif chord_type == "triad":
+        thirds = [p for p in pool if 3 <= p - primary <= 5]
+        fifths = [p for p in pool if 6 <= p - primary <= 8]
+        result = [primary]
+        if thirds:
+            result.append(min(thirds, key=lambda p: p - primary))
+        if fifths:
+            result.append(min(fifths, key=lambda p: p - primary))
+        return result
+    return [primary]
+
+
 def text_repr(pitches: list[int]) -> str:
     notes = " ".join(pitch_name(p) for p in pitches)
     return f"notes: {notes} | intervals: {interval_sequence(pitches)} | parsons: {parsons_code(pitches)}"

@@ -19,6 +19,8 @@ PROFILES = [
             "n_notes_range": [8, 16],
             "interval_leap_prob": 0.55,
             "sustain_prob": 0.7,
+            "chord_prob": 0.45,
+            "chord_types": ["octave", "fifth", "triad"],
         },
     },
 ]

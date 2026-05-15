@@ -5,7 +5,7 @@ from pathlib import Path
 
 from db import insert_phrase, start_session, end_session, get_profile
 from midi import make_midi_out
-from music import scale_pitches, text_repr
+from music import chord_pitches, scale_pitches, text_repr
 
 MOOD_PATH = Path(__file__).parent / "current_mood.json"
 PROFILE_PATH = Path(__file__).parent / "current_profile.json"
@@ -70,6 +70,8 @@ def play_phrase(
     leap_prob = params.get("interval_leap_prob", 0.0)
     n_notes_range = params.get("n_notes_range", [8, 12])
     sustain_prob = params.get("sustain_prob", 0.0)
+    chord_prob = params.get("chord_prob", 0.0)
+    chord_types = params.get("chord_types", ["octave"])
 
     n_notes = random.randint(*n_notes_range)
     note_events: list[dict] = []
@@ -87,18 +89,29 @@ def play_phrase(
             duration = random.uniform(*params["note_duration_range"])
             t_offset_ms = int((time.monotonic() - phrase_start) * 1000)
 
-            midi_out.note_on(pitch, velocity)
+            if chord_prob > 0 and random.random() < chord_prob:
+                to_play = chord_pitches(pitch, random.choice(chord_types), pitches_pool)
+            else:
+                to_play = [pitch]
+
+            companion_vel = max(1, int(velocity * 0.8))
+            for p in to_play:
+                midi_out.note_on(p, velocity if p == pitch else companion_vel)
             try:
                 time.sleep(duration)
             finally:
-                midi_out.note_off(pitch)
+                for p in to_play:
+                    midi_out.note_off(p)
 
-            note_events.append({
+            event = {
                 "pitch": pitch,
                 "velocity": velocity,
                 "time_ms": t_offset_ms,
                 "duration_ms": int(duration * 1000),
-            })
+            }
+            if len(to_play) > 1:
+                event["chord"] = to_play[1:]  # companion pitches; absent = monophonic
+            note_events.append(event)
             pitches.append(pitch)
             prev_pitch = pitch
             time.sleep(random.uniform(*params["gap_range"]))
@@ -113,6 +126,7 @@ def play_phrase(
         "voice": voice,
         "interval_leap_prob": leap_prob,
         "sustain": use_sustain,
+        "chord_prob": chord_prob,
     }
     return insert_phrase(
         session_id=session_id,
