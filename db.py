@@ -128,6 +128,29 @@ def insert_profile(
         return cur.lastrowid
 
 
+def upsert_profile(
+    name: str,
+    description: str,
+    traits: dict,
+    db_path: Path = DEFAULT_DB_PATH,
+) -> int:
+    with connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT id FROM musician_profiles WHERE name = ?", (name,)
+        ).fetchone()
+        if row:
+            conn.execute(
+                "UPDATE musician_profiles SET description = ?, traits_json = ? WHERE name = ?",
+                (description, json.dumps(traits), name),
+            )
+            return row["id"]
+        cur = conn.execute(
+            "INSERT INTO musician_profiles (name, description, traits_json) VALUES (?, ?, ?)",
+            (name, description, json.dumps(traits)),
+        )
+        return cur.lastrowid
+
+
 def get_profile(name: str, db_path: Path = DEFAULT_DB_PATH) -> dict | None:
     with connect(db_path) as conn:
         row = conn.execute(

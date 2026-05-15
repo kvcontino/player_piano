@@ -37,6 +37,8 @@ def merge_traits(mood: dict, traits: dict) -> dict:
     for key, val in traits.items():
         if key == "scales":
             params["scale"] = random.choice(val)  # pick one scale per phrase
+        elif key == "voices":
+            params["voice"] = random.choice(val)  # pick one voice per phrase
         elif key == "root" and val is not None:
             params["root"] = val
         else:
@@ -59,6 +61,11 @@ def play_phrase(
     midi_out, mood: dict, traits: dict, session_id: int, profile_id: int | None
 ) -> int:
     params = merge_traits(mood, traits)
+
+    voice = params.get("voice")
+    if voice is not None:
+        midi_out.set_voice(voice)
+
     pitches_pool = scale_pitches(params["scale"], params["root"], tuple(params["octave_range"]))
     leap_prob = params.get("interval_leap_prob", 0.0)
     n_notes_range = params.get("n_notes_range", [8, 12])
@@ -95,6 +102,7 @@ def play_phrase(
         "n_notes": n_notes,
         "scale": params["scale"],
         "root": params["root"],
+        "voice": voice,
         "interval_leap_prob": leap_prob,
     }
     return insert_phrase(

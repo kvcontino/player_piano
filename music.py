@@ -1,5 +1,29 @@
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
+# Subset of General MIDI voice names (program numbers 0-indexed, as mido expects)
+GM_VOICES = {
+    0:  "Acoustic Grand Piano",
+    1:  "Bright Acoustic Piano",
+    4:  "Electric Piano 1",
+    5:  "Electric Piano 2",
+    16: "Drawbar Organ",       # Hammond B-3 style
+    17: "Percussive Organ",
+    18: "Rock Organ",
+    19: "Church Organ",
+    40: "Violin",
+    48: "String Ensemble 1",
+    49: "String Ensemble 2",
+    52: "Choir Aahs",
+    80: "Lead 1 (Square)",
+    81: "Lead 2 (Sawtooth)",   # Moog-like
+    88: "Pad 1 (New Age)",
+    89: "Pad 2 (Warm)",
+}
+
+
+def voice_name(program: int) -> str:
+    return GM_VOICES.get(program, f"Voice {program}")
+
 ROOTS = {
     "C": 0, "C#": 1, "Db": 1, "D": 2, "D#": 3, "Eb": 3,
     "E": 4, "F": 5, "F#": 6, "Gb": 6, "G": 7, "G#": 8, "Ab": 8,

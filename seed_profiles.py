@@ -1,5 +1,4 @@
-import sqlite3
-from db import insert_profile
+from db import upsert_profile
 
 PROFILES = [
     {
@@ -7,10 +6,12 @@ PROFILES = [
         "description": (
             "ELP-era prog rock: harmonic minor, phrygian dominant, and diminished scales. "
             "Dramatic interval leaps, wide dynamics (near-silent to fortissimo), fast runs "
-            "to long held notes, full keyboard range. Angular and theatrical."
+            "to long held notes, full keyboard range. Angular and theatrical. "
+            "Voices rotate across his four signature instruments."
         ),
         "traits": {
             "scales": ["harmonic_minor", "phrygian_dominant", "diminished"],
+            "voices": [0, 16, 19, 81],  # Grand Piano, Drawbar Organ, Church Organ, Sawtooth Lead
             "octave_range": [2, 6],
             "velocity_range": [25, 115],
             "note_duration_range": [0.07, 2.0],
@@ -23,8 +24,5 @@ PROFILES = [
 
 if __name__ == "__main__":
     for p in PROFILES:
-        try:
-            pid = insert_profile(p["name"], p["description"], p["traits"])
-            print(f"Inserted profile {pid}: {p['name']}")
-        except sqlite3.IntegrityError:
-            print(f"Profile '{p['name']}' already exists — skipped")
+        pid = upsert_profile(p["name"], p["description"], p["traits"])
+        print(f"Upserted profile {pid}: {p['name']}")

@@ -2,7 +2,7 @@ from __future__ import annotations
 import os
 from abc import ABC, abstractmethod
 
-from music import pitch_name
+from music import pitch_name, voice_name
 
 
 class MidiOut(ABC):
@@ -11,6 +11,9 @@ class MidiOut(ABC):
 
     @abstractmethod
     def note_off(self, pitch: int) -> None: ...
+
+    @abstractmethod
+    def set_voice(self, program: int, channel: int = 0) -> None: ...
 
     @abstractmethod
     def close(self) -> None: ...
@@ -22,6 +25,9 @@ class MockMidiOut(MidiOut):
 
     def note_off(self, pitch: int) -> None:
         print(f"OFF  {pitch_name(pitch):>4}", flush=True)
+
+    def set_voice(self, program: int, channel: int = 0) -> None:
+        print(f"VOICE {program:3d}  {voice_name(program)}", flush=True)
 
     def close(self) -> None:
         pass
@@ -38,6 +44,9 @@ class RealMidiOut(MidiOut):
 
     def note_off(self, pitch: int) -> None:
         self._port.send(self._mido.Message("note_off", note=pitch))
+
+    def set_voice(self, program: int, channel: int = 0) -> None:
+        self._port.send(self._mido.Message("program_change", channel=channel, program=program))
 
     def close(self) -> None:
         self._port.close()
