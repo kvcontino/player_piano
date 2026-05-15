@@ -21,6 +21,9 @@ PROFILES = [
             "sustain_prob": 0.7,
             "chord_prob": 0.45,
             "chord_types": ["octave", "fifth", "triad"],
+            "bend_prob": 0.3,
+            "bend_styles": ["slide_in", "fall_off"],
+            "bend_semitones": 1.5,
         },
     },
     {

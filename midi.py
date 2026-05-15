@@ -16,6 +16,9 @@ class MidiOut(ABC):
     def set_voice(self, program: int, channel: int = 0) -> None: ...
 
     @abstractmethod
+    def set_pitch_bend(self, value: int, channel: int = 0) -> None: ...
+
+    @abstractmethod
     def set_sustain(self, on: bool, channel: int = 0) -> None: ...
 
     @abstractmethod
@@ -31,6 +34,9 @@ class MockMidiOut(MidiOut):
 
     def set_voice(self, program: int, channel: int = 0) -> None:
         print(f"VOICE {program:3d}  {voice_name(program)}", flush=True)
+
+    def set_pitch_bend(self, value: int, channel: int = 0) -> None:
+        pass  # silent in mock — too noisy for 10-step ramps
 
     def set_sustain(self, on: bool, channel: int = 0) -> None:
         print(f"SUSTAIN {'ON ' if on else 'OFF'}", flush=True)
@@ -53,6 +59,9 @@ class RealMidiOut(MidiOut):
 
     def set_voice(self, program: int, channel: int = 0) -> None:
         self._port.send(self._mido.Message("program_change", channel=channel, program=program))
+
+    def set_pitch_bend(self, value: int, channel: int = 0) -> None:
+        self._port.send(self._mido.Message("pitchwheel", channel=channel, pitch=value))
 
     def set_sustain(self, on: bool, channel: int = 0) -> None:
         self._port.send(self._mido.Message(

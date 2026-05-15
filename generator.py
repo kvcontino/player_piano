@@ -1,4 +1,5 @@
 import json
+import math
 import random
 import time
 from pathlib import Path
@@ -46,6 +47,38 @@ def merge_traits(mood: dict, traits: dict) -> dict:
     return params
 
 
+def apply_bend_style(midi_out, duration: float, style: str, semitones: float) -> None:
+    """Send pitch bend messages during a held note. Caller resets bend to 0 in finally."""
+    units = int(semitones * 4096)  # assumes GM default ±2 semitone bend range
+    steps = max(5, min(20, int(duration / 0.02)))  # ~50ms per step
+
+    if style == "slide_in":
+        # note_on was sent with bend already at -units; ramp up to centre
+        step_time = duration / steps
+        for i in range(steps):
+            midi_out.set_pitch_bend(int(-units + units * i / (steps - 1)))
+            time.sleep(step_time)
+
+    elif style == "fall_off":
+        time.sleep(duration * 0.75)
+        step_time = (duration * 0.25) / steps
+        for i in range(steps):
+            midi_out.set_pitch_bend(int(-units * i / (steps - 1)))
+            time.sleep(step_time)
+
+    elif style == "vibrato":
+        freq, amplitude = 5.0, units * 0.4
+        step_time = 0.02
+        elapsed = 0.0
+        while elapsed < duration:
+            midi_out.set_pitch_bend(int(amplitude * math.sin(2 * math.pi * freq * elapsed)))
+            time.sleep(step_time)
+            elapsed += step_time
+
+    else:
+        time.sleep(duration)
+
+
 def pick_note(pool: list[int], prev: int | None, leap_prob: float) -> int:
     """Pick next pitch, biased toward leaps (>3 semitones) at rate leap_prob."""
     if prev is None or leap_prob <= 0:
@@ -72,6 +105,9 @@ def play_phrase(
     sustain_prob = params.get("sustain_prob", 0.0)
     chord_prob = params.get("chord_prob", 0.0)
     chord_types = params.get("chord_types", ["octave"])
+    bend_prob = params.get("bend_prob", 0.0)
+    bend_styles = params.get("bend_styles", ["slide_in"])
+    bend_semitones = params.get("bend_semitones", 1.0)
 
     n_notes = random.randint(*n_notes_range)
     note_events: list[dict] = []
@@ -94,12 +130,27 @@ def play_phrase(
             else:
                 to_play = [pitch]
 
+            bend_style = (
+                random.choice(bend_styles)
+                if bend_prob > 0 and random.random() < bend_prob
+                else None
+            )
+
+            # slide_in: set bend below centre before note fires so it sounds flat → rises
+            if bend_style == "slide_in":
+                midi_out.set_pitch_bend(-int(bend_semitones * 4096))
+
             companion_vel = max(1, int(velocity * 0.8))
             for p in to_play:
                 midi_out.note_on(p, velocity if p == pitch else companion_vel)
             try:
-                time.sleep(duration)
+                if bend_style:
+                    apply_bend_style(midi_out, duration, bend_style, bend_semitones)
+                else:
+                    time.sleep(duration)
             finally:
+                if bend_style:
+                    midi_out.set_pitch_bend(0)
                 for p in to_play:
                     midi_out.note_off(p)
 
@@ -110,7 +161,9 @@ def play_phrase(
                 "duration_ms": int(duration * 1000),
             }
             if len(to_play) > 1:
-                event["chord"] = to_play[1:]  # companion pitches; absent = monophonic
+                event["chord"] = to_play[1:]
+            if bend_style:
+                event["bend"] = bend_style
             note_events.append(event)
             pitches.append(pitch)
             prev_pitch = pitch
@@ -127,6 +180,7 @@ def play_phrase(
         "interval_leap_prob": leap_prob,
         "sustain": use_sustain,
         "chord_prob": chord_prob,
+        "bend_prob": bend_prob,
     }
     return insert_phrase(
         session_id=session_id,
@@ -152,6 +206,7 @@ def main() -> None:
         print("\n[stopped]", flush=True)
     finally:
         end_session(session_id)
+        midi_out.set_pitch_bend(0)  # safety reset on any exit
         midi_out.close()
 
 
