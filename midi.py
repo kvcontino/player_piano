@@ -16,6 +16,9 @@ class MidiOut(ABC):
     def set_voice(self, program: int, channel: int = 0) -> None: ...
 
     @abstractmethod
+    def set_sustain(self, on: bool, channel: int = 0) -> None: ...
+
+    @abstractmethod
     def close(self) -> None: ...
 
 
@@ -28,6 +31,9 @@ class MockMidiOut(MidiOut):
 
     def set_voice(self, program: int, channel: int = 0) -> None:
         print(f"VOICE {program:3d}  {voice_name(program)}", flush=True)
+
+    def set_sustain(self, on: bool, channel: int = 0) -> None:
+        print(f"SUSTAIN {'ON ' if on else 'OFF'}", flush=True)
 
     def close(self) -> None:
         pass
@@ -47,6 +53,11 @@ class RealMidiOut(MidiOut):
 
     def set_voice(self, program: int, channel: int = 0) -> None:
         self._port.send(self._mido.Message("program_change", channel=channel, program=program))
+
+    def set_sustain(self, on: bool, channel: int = 0) -> None:
+        self._port.send(self._mido.Message(
+            "control_change", channel=channel, control=64, value=127 if on else 0
+        ))
 
     def close(self) -> None:
         self._port.close()

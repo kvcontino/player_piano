@@ -69,6 +69,7 @@ def play_phrase(
     pitches_pool = scale_pitches(params["scale"], params["root"], tuple(params["octave_range"]))
     leap_prob = params.get("interval_leap_prob", 0.0)
     n_notes_range = params.get("n_notes_range", [8, 12])
+    sustain_prob = params.get("sustain_prob", 0.0)
 
     n_notes = random.randint(*n_notes_range)
     note_events: list[dict] = []
@@ -76,27 +77,34 @@ def play_phrase(
     phrase_start = time.monotonic()
     prev_pitch: int | None = None
 
-    for _ in range(n_notes):
-        pitch = pick_note(pitches_pool, prev_pitch, leap_prob)
-        velocity = random.randint(*params["velocity_range"])
-        duration = random.uniform(*params["note_duration_range"])
-        t_offset_ms = int((time.monotonic() - phrase_start) * 1000)
+    use_sustain = random.random() < sustain_prob
+    if use_sustain:
+        midi_out.set_sustain(True)
+    try:
+        for _ in range(n_notes):
+            pitch = pick_note(pitches_pool, prev_pitch, leap_prob)
+            velocity = random.randint(*params["velocity_range"])
+            duration = random.uniform(*params["note_duration_range"])
+            t_offset_ms = int((time.monotonic() - phrase_start) * 1000)
 
-        midi_out.note_on(pitch, velocity)
-        try:
-            time.sleep(duration)
-        finally:
-            midi_out.note_off(pitch)
+            midi_out.note_on(pitch, velocity)
+            try:
+                time.sleep(duration)
+            finally:
+                midi_out.note_off(pitch)
 
-        note_events.append({
-            "pitch": pitch,
-            "velocity": velocity,
-            "time_ms": t_offset_ms,
-            "duration_ms": int(duration * 1000),
-        })
-        pitches.append(pitch)
-        prev_pitch = pitch
-        time.sleep(random.uniform(*params["gap_range"]))
+            note_events.append({
+                "pitch": pitch,
+                "velocity": velocity,
+                "time_ms": t_offset_ms,
+                "duration_ms": int(duration * 1000),
+            })
+            pitches.append(pitch)
+            prev_pitch = pitch
+            time.sleep(random.uniform(*params["gap_range"]))
+    finally:
+        if use_sustain:
+            midi_out.set_sustain(False)
 
     phrase_params = {
         "n_notes": n_notes,
@@ -104,6 +112,7 @@ def play_phrase(
         "root": params["root"],
         "voice": voice,
         "interval_leap_prob": leap_prob,
+        "sustain": use_sustain,
     }
     return insert_phrase(
         session_id=session_id,

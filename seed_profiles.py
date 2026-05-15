@@ -18,6 +18,7 @@ PROFILES = [
             "gap_range": [0.0, 0.2],
             "n_notes_range": [8, 16],
             "interval_leap_prob": 0.55,
+            "sustain_prob": 0.7,
         },
     },
 ]
